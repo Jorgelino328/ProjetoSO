@@ -5,7 +5,6 @@
 
 int **geraMatriz(int lin, int col) {
     int **matriz = (int **) malloc(lin * sizeof(int *));
-    srand(time(NULL));
     for (int i = 0; i < lin; i++) {
         matriz[i] = (int *) malloc(col * sizeof(int));
         for (int j = 0; j < col; j++) {
@@ -29,21 +28,23 @@ void salvar(int **matriz, int linhas, int colunas, char nome[]) {
 }
 
 int main() {
-    int r1, c1, r2, c2;
-    scanf("%d %d %d %d", &r1, &c1, &r2, &c2);
+    int l1, c1, l2, c2;
+    scanf("%d %d %d %d", &l1, &c1, &l2, &c2);
 
-    int **matriz1 = geraMatriz(r1, c1);
-    salvar(matriz1, r1, c2, "matriz1.txt");
+    srand(time(NULL));
 
-    int **matriz2 = geraMatriz(r2, c2);
-    salvar(matriz2, r1, c2, "matriz2.txt");
+    int **matriz1 = geraMatriz(l1, c1);
+    salvar(matriz1, l1, c1, "matriz1.txt");
 
-    for (int i = 0; i < r1; i++) {
+    int **matriz2 = geraMatriz(l2, c2);
+    salvar(matriz2, l2, c2, "matriz2.txt");
+
+    for (int i = 0; i < l1; i++) {
         free(matriz1[i]);
     }
         free(matriz1);
 
-    for (int i = 0; i < r2; i++) {
+    for (int i = 0; i < l2; i++) {
         free(matriz2[i]);
     }
         free(matriz2);
