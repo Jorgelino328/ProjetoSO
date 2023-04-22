@@ -1,17 +1,9 @@
 #include <pthread.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-
-typedef struct {
-    int id;             // Thread ID
-    int l1,c1,c2;
-    int num_threads;    // Total number of threads
-    int rows_per_thread;// Number of rows to multiply per thread
-    int** matrix1;      // First input matrix
-    int** matrix2;      // Second input matrix
-} ThreadInfo;
-
 
 
 int **geraMatriz(int rows, int cols) {
@@ -59,25 +51,32 @@ void salvar(int **matriz, int linhas, int colunas, float tempo, char nome[]) {
     fclose(arquivo);
 }
 
-void *multiplicaMatriz(void *arg)
+void *multiplicaMatriz(int rows_per_thread, int **matriz1, int **matriz2, int l1, int c1, int c2, int p_id, int id)
 {
-    
-    ThreadInfo* info = (ThreadInfo*) arg;
-
-    int start_row = info->id * info->rows_per_thread;
-    int end_row = start_row + info->rows_per_thread;
-    int c1 = info->c1;
-    int c2 = info->c2;
-    int l1 = info->l1;
-    int id = info->id;
+    id = id - p_id;
+    printf("Hello, im p#%d\n",id);
+    int start_row = id * rows_per_thread;
+    int end_row = start_row + rows_per_thread;
     int **result = geraMatriz(l1,c2);
     
+
+   /* printf("rows_per_thread: %d\n",rows_per_thread);
+    printf("start_row: %d\n",start_row);
+    printf("end_row: %d\n",end_row);
+    printf("l1: %d\n",l1);
+    printf("c1: %d\n",c1);
+    printf("c2: %d\n",c2);
+    printf("p_pid: %d\n",id);
+    printf("pid: %d\n",id);
+    */
+
+
     clock_t inicio = clock();
     for (int i = start_row; i < end_row; i++) {
         for (int j = 0; j < c2; j++) {
             int sum = 0;
             for (int k = 0; k < c1; k++) {
-                sum += info->matrix1[i][k] * info->matrix2[k][j];
+                sum += matriz1[i][k] * matriz2[k][j];
             }
             result[i][j] = sum;
         }
@@ -87,10 +86,9 @@ void *multiplicaMatriz(void *arg)
     float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC/1000000.0); //Tempo em microsegundos
 
     char buf[13];
-    snprintf(buf, 13, "matriz_%d.txt", id); 
+    snprintf(buf, 13, "matriz-%d.txt", id); 
     salvar(result, l1, c2, tempo_execucao, buf);
-    
-    pthread_exit(NULL);
+    exit(0);
 }
 
 int main(int argc, char *argv[]){
@@ -111,25 +109,20 @@ int main(int argc, char *argv[]){
 
     int **resultado = geraMatriz(l1,c2);
 
-    pthread_t threads[P];
-    ThreadInfo thread_info[P];
+    pid_t pid[P];
+    int status;
 
+        
     for (int i = 0; i < (l1 * c2)/P; i++){
-        thread_info[i].id = i;
-        thread_info[i].num_threads = P;
-        thread_info[i].rows_per_thread = rows_per_thread;
-        thread_info[i].matrix1 = matriz1;
-        thread_info[i].matrix2 = matriz2;
-        thread_info[i].c1 = c1;
-        thread_info[i].c2 = c2;
-        thread_info[i].l1 = l1;
-
-        pthread_create(&threads[i], NULL, multiplicaMatriz, (void *)&thread_info[i]);
+        pid[0] = fork();   
+        //printf("Hello, im p#%d\n",pid[i]);
+        if(!pid[0]){
+            multiplicaMatriz(rows_per_thread, matriz1, matriz2,l1,c1, c2,getppid(),getpid());
+        }
     }
 
-    for (int i = 0; i < P; i++) {
-        pthread_join(threads[i], NULL);
-    }
+     
+    while(wait(NULL) > 0);
 
     for (int i = 0; i < l1; i++) {
         free(matriz1[i]);
