@@ -10,7 +10,6 @@ typedef struct {
     int rows_per_thread;// Number of rows to multiply per thread
     int** matrix1;      // First input matrix
     int** matrix2;      // Second input matrix
-    int** result;       // Output matrix
 } ThreadInfo;
 
 
@@ -62,7 +61,7 @@ void salvar(int **matriz, int linhas, int colunas, float tempo, char nome[]) {
 
 void *multiplicaMatriz(void *arg)
 {
-    clock_t inicio = clock();
+    
     ThreadInfo* info = (ThreadInfo*) arg;
 
     int start_row = info->id * info->rows_per_thread;
@@ -71,35 +70,26 @@ void *multiplicaMatriz(void *arg)
     int c2 = info->c2;
     int l1 = info->l1;
     int id = info->id;
-
-    printf("start_row: %d\n", start_row);
-    printf("end_row: %d\n", end_row);
-    printf("c1: %d\n", c1);
-    printf("c2: %d\n", c2);
-    printf("l1: %d\n", l1);
-    printf("id: %d\n", id);
-
-
-    /*
-    // Multiply the subset of rows with the entire second matrix
+    int **result = geraMatriz(l1,c2);
+    
+    clock_t inicio = clock();
     for (int i = start_row; i < end_row; i++) {
         for (int j = 0; j < c2; j++) {
             int sum = 0;
             for (int k = 0; k < c1; k++) {
                 sum += info->matrix1[i][k] * info->matrix2[k][j];
             }
-            info->result[i][j] = sum;
+            result[i][j] = sum;
         }
     }
-
     clock_t fim = clock();
     
     float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC/1000000.0); //Tempo em microsegundos
 
     char buf[13];
     snprintf(buf, 13, "matriz_%d.txt", id); 
-    salvar(info->result, l1, c2, tempo_execucao, buf);
-    */
+    salvar(result, l1, c2, tempo_execucao, buf);
+    
     pthread_exit(NULL);
 }
 
@@ -119,8 +109,13 @@ int main(int argc, char *argv[]){
     int **matriz2 = lerMatriz(arquivo2,&l2,&c2);
     fclose(arquivo2);
 
-    int **resultado = generate_matrix(l1,c2);
+    int **resultado = geraMatriz(l1,c2);
 
+    /*printf("c1: %d\n", c1);
+    printf("c2: %d\n", c2);
+    printf("l1: %d\n", l1);
+    printf("l1: %d\n", l2);
+    */
     pthread_t threads[P];
     ThreadInfo thread_info[P];
 
@@ -130,7 +125,9 @@ int main(int argc, char *argv[]){
         thread_info[i].rows_per_thread = rows_per_thread;
         thread_info[i].matrix1 = matriz1;
         thread_info[i].matrix2 = matriz2;
-        thread_info[i].result = resultado;
+        thread_info[i].c1 = c1;
+        thread_info[i].c2 = c2;
+        thread_info[i].l1 = l1;
 
         printf("Processo principal criando thread #%d\n", i);
         pthread_create(&threads[i], NULL, multiplicaMatriz, (void *)&thread_info[i]);
