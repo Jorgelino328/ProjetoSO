@@ -34,10 +34,10 @@ int main() {
     srand(time(NULL));
 
     int **matriz1 = geraMatriz(l1, c1);
-    salvar(matriz1, l1, c1, "matriz1.txt");
+    salvar(matriz1, l1, c1, "Matrizes/Matrizes_Auxiliares/matriz1.txt");
 
     int **matriz2 = geraMatriz(l2, c2);
-    salvar(matriz2, l2, c2, "matriz2.txt");
+    salvar(matriz2, l2, c2, "Matrizes/Matrizes_Auxiliares/matriz2.txt");
 
     for (int i = 0; i < l1; i++) {
         free(matriz1[i]);

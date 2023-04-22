@@ -86,8 +86,8 @@ void *multiplicaMatriz(void *arg)
     
     float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC); //Tempo em segundos
 
-    char buf[13];
-    snprintf(buf, 13, "matriz_%d.txt", id); 
+    char buf[60];
+    snprintf(buf, 40, "Matrizes/Matrizes_das_Threads/matriz%d.txt", id); 
     salvar(result, l1, c2, tempo_execucao, buf);
     
     pthread_exit(NULL);
@@ -98,23 +98,21 @@ int main(int argc, char *argv[]){
     scanf("%d",&P);
     
     int l1,c1;
-    FILE *arquivo1 = fopen("matriz1.txt", "r");
+    FILE *arquivo1 = fopen("Matrizes/Matrizes_Auxiliares/matriz1.txt", "r");
     int **matriz1 = lerMatriz(arquivo1,&l1,&c1);
     fclose(arquivo1);
 
     int li_por_thread = (l1 + P - 1) / P;
 
     int l2,c2;
-    FILE *arquivo2 = fopen("matriz2.txt", "r");
+    FILE *arquivo2 = fopen("Matrizes/Matrizes_Auxiliares/matriz2.txt", "r");
     int **matriz2 = lerMatriz(arquivo2,&l2,&c2);
     fclose(arquivo2);
-
-    int **resultado = geraMatriz(l1,c2);
 
     pthread_t threads[P];
     ThreadInfo thread_info[P];
 
-    for (int i = 0; i < (l1 * c2)/P; i++){
+    for (int i = 0; i < P; i++){
         thread_info[i].id = i;
         thread_info[i].num_threads = P;
         thread_info[i].li_por_thread = li_por_thread;
@@ -133,7 +131,6 @@ int main(int argc, char *argv[]){
 
     for (int i = 0; i < l1; i++) {
         free(matriz1[i]);
-        free(resultado[i]);
     }
     free(matriz1);
     for (int i = 0; i < l2; i++) {
@@ -141,6 +138,5 @@ int main(int argc, char *argv[]){
     }
     free(matriz2);
 
-    free(resultado);
     return 0;
 }

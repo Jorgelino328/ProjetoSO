@@ -51,14 +51,13 @@ void salvar(int **matriz, int linhas, int colunas, float tempo, char nome[]) {
     fclose(arquivo);
 }
 
-void *multiplicaMatriz(int li_por_thread, int **matriz1, int **matriz2, int l1, int c1, int c2, int p_id, int id)
-{
-    id = id - p_id;
-    printf("Hello, im p#%d\n",id);
+void *multiplicaMatriz(int li_por_thread, int **matriz1, int **matriz2, int l1, int c1, int c2)
+
+{   
+    int id = getpid() - getppid();
     int l_comeco = id * li_por_thread;
     int l_final = l_comeco + li_por_thread;
     int **result = geraMatriz(l1,c2);
-    
     clock_t inicio = clock();
     for (int i = l_comeco; i < l_final; i++) {
         for (int j = 0; j < c2; j++) {
@@ -70,51 +69,47 @@ void *multiplicaMatriz(int li_por_thread, int **matriz1, int **matriz2, int l1, 
         }
     }
     clock_t fim = clock();
-    
-    float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC); //Tempo em segundos
+    /*float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC); //Tempo em segundos
 
-    char buf[13];
-    snprintf(buf, 13, "matriz-%d.txt", id); 
-    salvar(result, l1, c2, tempo_execucao, buf);
-    exit(0);
+    char buf[60];
+    snprintf(buf, 60, "Matrizes/Matrizes_dos_Processos/matriz%d.txt", id); */
+    printf("Hello, im p#%d, child of #%d and i'm in a function\n",getpid(),getppid());
+    //salvar(result, l1, c2, tempo_execucao, buf);
 }
 
 int main(int argc, char *argv[]){
-    int P;
+    int P,status;
     scanf("%d",&P);
     
     int l1,c1;
-    FILE *arquivo1 = fopen("matriz1.txt", "r");
+    FILE *arquivo1 = fopen("Matrizes/Matrizes_Auxiliares/matriz1.txt", "r");
     int **matriz1 = lerMatriz(arquivo1,&l1,&c1);
     fclose(arquivo1);
 
-    int rows_per_thread = (l1 + P - 1) / P;
+    int li_por_thread = (l1 + P - 1) / P;
 
     int l2,c2;
-    FILE *arquivo2 = fopen("matriz2.txt", "r");
+    FILE *arquivo2 = fopen("Matrizes/Matrizes_Auxiliares/matriz2.txt", "r");
     int **matriz2 = lerMatriz(arquivo2,&l2,&c2);
     fclose(arquivo2);
 
-    int **resultado = geraMatriz(l1,c2);
-
-    pid_t pid[P];
-    int status;
-
-        
-    for (int i = 0; i < (l1 * c2)/P; i++){
-        pid[0] = fork();   
-        //printf("Hello, im p#%d\n",pid[i]);
-        if(!pid[0]){
-            multiplicaMatriz(rows_per_thread, matriz1, matriz2,l1,c1, c2,getppid(),getpid());
+    pid_t pid;
+    int pai = getpid();
+    for (int i = 0; i < P; i++){
+        pid = fork();
+        if(!pid){
+            printf("Hello, im p#%d, child of #%d\n",getpid(),getppid());
+            multiplicaMatriz(li_por_thread, matriz1, matriz2,l1,c1, c2);
+            printf("Bye, im p#%d, child of #%d and i'm leaving now\n",getpid(),getppid());
+            exit(0);
         }
     }
-
-     
-    while(wait(NULL) > 0);
+    while ((pid = wait(&status)) > 0) {
+        printf("Filho %d terminou com status %d\n", pid, WEXITSTATUS(status));
+    }
 
     for (int i = 0; i < l1; i++) {
         free(matriz1[i]);
-        free(resultado[i]);
     }
     free(matriz1);
     for (int i = 0; i < l2; i++) {
@@ -122,6 +117,7 @@ int main(int argc, char *argv[]){
     }
     free(matriz2);
 
-    free(resultado);
+    printf("Bye, im p#%d, child of #%d and i'm leaving now\n",getpid(),getppid());
+    
     return 0;
 }

@@ -72,12 +72,12 @@ void salvar(int **matriz, int linhas, int colunas, float tempo, char nome[]) {
 
 int main() {
     int l1,c1;
-    FILE *arquivo1 = fopen("matriz1.txt", "r");
+    FILE *arquivo1 = fopen("Matrizes/Matrizes_Auxiliares/matriz1.txt", "r");
     int **matriz1 = lerMatriz(arquivo1,&l1,&c1);
     fclose(arquivo1);
 
     int l2,c2;
-    FILE *arquivo2 = fopen("matriz2.txt", "r");
+    FILE *arquivo2 = fopen("Matrizes/Matrizes_Auxiliares/matriz2.txt", "r");
     int **matriz2 = lerMatriz(arquivo2,&l2,&c2);
     fclose(arquivo2);
     
@@ -85,9 +85,9 @@ int main() {
     int **resultado = multiplicaMatriz(matriz1,matriz2,l1,c1,l2,c2);
     clock_t fim = clock();
     
-    float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC/1000000.0); //Tempo em segundos
+    float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC); //Tempo em segundos
     
-    salvar(resultado, l1, c2, tempo_execucao,"matriz3.txt");
+    salvar(resultado, l1, c2, tempo_execucao,"Matrizes/Matrizes_Sequencial/matriz_resultado.txt");
 
     for (int i = 0; i < l1; i++) {
         free(matriz1[i]);
