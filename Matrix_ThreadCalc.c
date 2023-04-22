@@ -1,91 +1,155 @@
+#include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-void getElementosMatriz(int matriz1[][10],int matriz2[][10], int row1, int column1,int row2, int column2) {
+typedef struct {
+    int id;             // Thread ID
+    int l1,c1,c2;
+    int num_threads;    // Total number of threads
+    int rows_per_thread;// Number of rows to multiply per thread
+    int** matrix1;      // First input matrix
+    int** matrix2;      // Second input matrix
+    int** result;       // Output matrix
+} ThreadInfo;
 
-    printf("\nDigite os elementos da primeira matriz: \n");
 
-    for (int i = 0; i < row1; ++i) {
-        for (int j = 0; j < column1; ++j) {
-            printf("Digite a(%d%d): ", i + 1, j + 1);
-            scanf("%d", &matriz1[i][j]);
+
+int **geraMatriz(int rows, int cols) {
+    int **matrix = (int **) malloc(rows * sizeof(int *));
+    for (int i = 0; i < rows; i++) {
+        matrix[i] = (int *) malloc(cols * sizeof(int));
+        for (int j = 0; j < cols; j++) {
+            matrix[i][j] = 0;
         }
     }
-
-    printf("\nDigite os elementos da segunda matriz: \n");
-    
-    for (int i = 0; i < row2; ++i) {
-        for (int j = 0; j < column2; ++j) {
-            printf("Digite b(%d%d): ", i + 1, j + 1);
-            scanf("%d", &matriz2[i][j]);
-        }
-    }
+    return matrix;
 }
 
-void multiplicaMatriz(  int first[][10],
-                        int second[][10],
-                        int result[][10],
-                        int r1, int c1, int r2, int c2) {
-
-    for (int i = 0; i < r1; ++i) {
-        for (int j = 0; j < c2; ++j) {
-            result[i][j] = 0;
+int **lerMatriz(FILE *arquivo, int *l,int *c) {
+    int linha, coluna;
+    fscanf(arquivo, "%d %d", &linha, &coluna);
+    *l = linha;
+    *c = coluna;
+    int **matriz = (int **) malloc(linha * sizeof(int *));
+    for (int i = 0; i < linha; i++) {
+        matriz[i] = (int *) malloc(coluna * sizeof(int));
+        for (int j = 0; j < coluna; j++) {
+            char posicao[3];
+            int valor;
+            fscanf(arquivo, "%s %d", posicao, &valor);
+            int linha_posicao = posicao[1] - '0';
+            int coluna_posicao = posicao[2] - '0';
+            matriz[linha_posicao][coluna_posicao] = valor;
         }
     }
+    return matriz;
+}
 
-    for (int i = 0; i < r1; ++i) {
-        for (int j = 0; j < c2; ++j) {
-            for (int k = 0; k < c1; ++k) {
-                result[i][j] += first[i][k] * second[k][j];
+
+void salvar(int **matriz, int linhas, int colunas, float tempo, char nome[]) {
+    FILE *arquivo;
+    arquivo = fopen(nome, "w");
+    fprintf(arquivo, "%d %d\n", linhas, colunas);
+    for (int i = 0; i < linhas; i++) {
+        for (int j = 0; j < colunas; j++) {
+            fprintf(arquivo, "c%d%d %d\n",i,j,matriz[i][j]);
+        }
+    }
+    fprintf(arquivo, "%f ",tempo);
+    fclose(arquivo);
+}
+
+void *multiplicaMatriz(void *arg)
+{
+    clock_t inicio = clock();
+    ThreadInfo* info = (ThreadInfo*) arg;
+
+    int start_row = info->id * info->rows_per_thread;
+    int end_row = start_row + info->rows_per_thread;
+    int c1 = info->c1;
+    int c2 = info->c2;
+    int l1 = info->l1;
+    int id = info->id;
+
+    printf("start_row: %d\n", start_row);
+    printf("end_row: %d\n", end_row);
+    printf("c1: %d\n", c1);
+    printf("c2: %d\n", c2);
+    printf("l1: %d\n", l1);
+    printf("id: %d\n", id);
+
+
+    /*
+    // Multiply the subset of rows with the entire second matrix
+    for (int i = start_row; i < end_row; i++) {
+        for (int j = 0; j < c2; j++) {
+            int sum = 0;
+            for (int k = 0; k < c1; k++) {
+                sum += info->matrix1[i][k] * info->matrix2[k][j];
             }
+            info->result[i][j] = sum;
         }
     }
+
+    clock_t fim = clock();
+    
+    float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC/1000000.0); //Tempo em microsegundos
+
+    char buf[13];
+    snprintf(buf, 13, "matriz_%d.txt", id); 
+    salvar(info->result, l1, c2, tempo_execucao, buf);
+    */
+    pthread_exit(NULL);
 }
 
-void mostrar(int result[][10], int row, int column) {
+int main(int argc, char *argv[]){
+    int P;
+    scanf("%d",&P);
+    
+    int l1,c1;
+    FILE *arquivo1 = fopen("matriz1.txt", "r");
+    int **matriz1 = lerMatriz(arquivo1,&l1,&c1);
+    fclose(arquivo1);
 
-    printf("\nMatriz Resultado:\n");
-    for (int i = 0; i < row; ++i) {
-        for (int j = 0; j < column; ++j) {
-            printf("| %d ", result[i][j]);
-            if (j == column - 1)
-                printf("|\n");
-        }
+    int rows_per_thread = (l1 + P - 1) / P;
+
+    int l2,c2;
+    FILE *arquivo2 = fopen("matriz2.txt", "r");
+    int **matriz2 = lerMatriz(arquivo2,&l2,&c2);
+    fclose(arquivo2);
+
+    int **resultado = generate_matrix(l1,c2);
+
+    pthread_t threads[P];
+    ThreadInfo thread_info[P];
+
+    for (int i = 0; i < (l1 * c2)/P; i++){
+        thread_info[i].id = i;
+        thread_info[i].num_threads = P;
+        thread_info[i].rows_per_thread = rows_per_thread;
+        thread_info[i].matrix1 = matriz1;
+        thread_info[i].matrix2 = matriz2;
+        thread_info[i].result = resultado;
+
+        printf("Processo principal criando thread #%d\n", i);
+        pthread_create(&threads[i], NULL, multiplicaMatriz, (void *)&thread_info[i]);
     }
-}
 
-int main() {
-    int first[10][10], second[10][10], result[10][10], r1, c1, r2, c2;
-    printf("Digite o número de linhas e colunas da primeira matriz:\n");
-    printf("Linhas: ");
-    scanf("%d", &r1);
-    printf("Colunas: ");
-    scanf("%d", &c1);
-    printf("Digite o número de linhas e colunas da segunda matriz: \n");
-    printf("Linhas: ");
-    scanf("%d", &r2);
-    printf("Colunas: ");
-    scanf("%d", &c2);
+    for (int i = 0; i < P; i++) {
+        pthread_join(threads[i], NULL);
+    }
 
+    for (int i = 0; i < l1; i++) {
+        free(matriz1[i]);
+        free(resultado[i]);
+    }
+    free(matriz1);
+    for (int i = 0; i < l2; i++) {
+        free(matriz2[i]);
+    }
+    free(matriz2);
 
-   while (c1 != r2) {
-        printf("Erro! O número de colunas da primeira matriz\n deve ser igual ao número de linhas da segunda.\n Por favor digite novamente:\n");
-        printf("Digite o número de linhas e colunas da primeira matriz:\n");
-        printf("Linhas: ");
-        scanf("%d", &r1);
-        printf("Colunas: ");
-        scanf("%d", &c1);
-        printf("Digite o número de linhas e colunas da segunda matriz: \n");
-        printf("Linhas: ");
-        scanf("%d", &r2);
-        printf("Colunas: ");
-        scanf("%d", &c2);
-   }
-
-    getElementosMatriz(first, second, r1, c1, r2 , c2 );
-
-    multiplicaMatriz(first, second, result, r1, c1, r2, c2);
-
-    mostrar(result, r1, c2);
-
+    free(resultado);
     return 0;
 }

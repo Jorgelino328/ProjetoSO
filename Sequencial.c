@@ -3,6 +3,7 @@
 #include <time.h>
 
 
+
 int **generate_matrix(int rows, int cols) {
     int **matrix = (int **) malloc(rows * sizeof(int *));
     for (int i = 0; i < rows; i++) {
@@ -53,7 +54,7 @@ int **multiplicaMatriz(int **matriz1, int **matriz2, int lin1, int col1, int lin
     return resultado;
 }
 
-void salvar(int **matriz, int linhas, int colunas, char nome[]) {
+void salvar(int **matriz, int linhas, int colunas, float tempo, char nome[]) {
     FILE *arquivo;
     arquivo = fopen(nome, "w");
     fprintf(arquivo, "%d %d\n", linhas, colunas);
@@ -62,6 +63,7 @@ void salvar(int **matriz, int linhas, int colunas, char nome[]) {
             fprintf(arquivo, "c%d%d %d\n",i,j,matriz[i][j]);
         }
     }
+    fprintf(arquivo, "%f ",tempo);
     fclose(arquivo);
 }
 
@@ -83,9 +85,11 @@ int main() {
     int **resultado = multiplicaMatriz(matriz1,matriz2,l1,c1,l2,c2);
     clock_t fim = clock();
     
-    double tempo_execucao = fim - inicio;
+    float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC/1000000.0); //Tempo em microsegundos
+
+    printf("%f\n", tempo_execucao);
     
-    salvar(resultado, l1, c2, "matriz3.txt");
+    salvar(resultado, l1, c2, tempo_execucao,"matriz3.txt");
 
     for (int i = 0; i < l1; i++) {
         free(matriz1[i]);
