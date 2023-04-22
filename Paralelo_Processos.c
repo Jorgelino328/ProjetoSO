@@ -6,15 +6,15 @@
 #include <stdlib.h>
 
 
-int **geraMatriz(int rows, int cols) {
-    int **matrix = (int **) malloc(rows * sizeof(int *));
-    for (int i = 0; i < rows; i++) {
-        matrix[i] = (int *) malloc(cols * sizeof(int));
-        for (int j = 0; j < cols; j++) {
-            matrix[i][j] = 0;
+int **geraMatriz(int lin, int col) {
+    int **matriz = (int **) malloc(lin * sizeof(int *));
+    for (int i = 0; i < lin; i++) {
+        matriz[i] = (int *) malloc(col * sizeof(int));
+        for (int j = 0; j < col; j++) {
+            matriz[i][j] = 0;
         }
     }
-    return matrix;
+    return matriz;
 }
 
 int **lerMatriz(FILE *arquivo, int *l,int *c) {
@@ -51,28 +51,16 @@ void salvar(int **matriz, int linhas, int colunas, float tempo, char nome[]) {
     fclose(arquivo);
 }
 
-void *multiplicaMatriz(int rows_per_thread, int **matriz1, int **matriz2, int l1, int c1, int c2, int p_id, int id)
+void *multiplicaMatriz(int li_por_thread, int **matriz1, int **matriz2, int l1, int c1, int c2, int p_id, int id)
 {
     id = id - p_id;
     printf("Hello, im p#%d\n",id);
-    int start_row = id * rows_per_thread;
-    int end_row = start_row + rows_per_thread;
+    int l_comeco = id * li_por_thread;
+    int l_final = l_comeco + li_por_thread;
     int **result = geraMatriz(l1,c2);
     
-
-   /* printf("rows_per_thread: %d\n",rows_per_thread);
-    printf("start_row: %d\n",start_row);
-    printf("end_row: %d\n",end_row);
-    printf("l1: %d\n",l1);
-    printf("c1: %d\n",c1);
-    printf("c2: %d\n",c2);
-    printf("p_pid: %d\n",id);
-    printf("pid: %d\n",id);
-    */
-
-
     clock_t inicio = clock();
-    for (int i = start_row; i < end_row; i++) {
+    for (int i = l_comeco; i < l_final; i++) {
         for (int j = 0; j < c2; j++) {
             int sum = 0;
             for (int k = 0; k < c1; k++) {
@@ -83,7 +71,7 @@ void *multiplicaMatriz(int rows_per_thread, int **matriz1, int **matriz2, int l1
     }
     clock_t fim = clock();
     
-    float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC/1000000.0); //Tempo em microsegundos
+    float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC); //Tempo em segundos
 
     char buf[13];
     snprintf(buf, 13, "matriz-%d.txt", id); 

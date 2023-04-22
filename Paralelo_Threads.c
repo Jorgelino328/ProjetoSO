@@ -4,25 +4,25 @@
 #include <unistd.h>
 
 typedef struct {
-    int id;             // Thread ID
+    int id;             
     int l1,c1,c2;
-    int num_threads;    // Total number of threads
-    int rows_per_thread;// Number of rows to multiply per thread
-    int** matrix1;      // First input matrix
-    int** matrix2;      // Second input matrix
+    int num_threads;    
+    int li_por_thread;
+    int** matriz1;      
+    int** matriz2;     
 } ThreadInfo;
 
 
 
-int **geraMatriz(int rows, int cols) {
-    int **matrix = (int **) malloc(rows * sizeof(int *));
-    for (int i = 0; i < rows; i++) {
-        matrix[i] = (int *) malloc(cols * sizeof(int));
-        for (int j = 0; j < cols; j++) {
-            matrix[i][j] = 0;
+int **geraMatriz(int lin, int col) {
+    int **matriz = (int **) malloc(lin * sizeof(int *));
+    for (int i = 0; i < lin; i++) {
+        matriz[i] = (int *) malloc(col * sizeof(int));
+        for (int j = 0; j < col; j++) {
+            matriz[i][j] = 0;
         }
     }
-    return matrix;
+    return matriz;
 }
 
 int **lerMatriz(FILE *arquivo, int *l,int *c) {
@@ -64,8 +64,8 @@ void *multiplicaMatriz(void *arg)
     
     ThreadInfo* info = (ThreadInfo*) arg;
 
-    int start_row = info->id * info->rows_per_thread;
-    int end_row = start_row + info->rows_per_thread;
+    int l_comeco = info->id * info->li_por_thread;
+    int l_final = l_comeco + info->li_por_thread;
     int c1 = info->c1;
     int c2 = info->c2;
     int l1 = info->l1;
@@ -73,18 +73,18 @@ void *multiplicaMatriz(void *arg)
     int **result = geraMatriz(l1,c2);
     
     clock_t inicio = clock();
-    for (int i = start_row; i < end_row; i++) {
+    for (int i = l_comeco; i < l_final; i++) {
         for (int j = 0; j < c2; j++) {
             int sum = 0;
             for (int k = 0; k < c1; k++) {
-                sum += info->matrix1[i][k] * info->matrix2[k][j];
+                sum += info->matriz1[i][k] * info->matriz2[k][j];
             }
             result[i][j] = sum;
         }
     }
     clock_t fim = clock();
     
-    float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC/1000000.0); //Tempo em microsegundos
+    float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC); //Tempo em segundos
 
     char buf[13];
     snprintf(buf, 13, "matriz_%d.txt", id); 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]){
     int **matriz1 = lerMatriz(arquivo1,&l1,&c1);
     fclose(arquivo1);
 
-    int rows_per_thread = (l1 + P - 1) / P;
+    int li_por_thread = (l1 + P - 1) / P;
 
     int l2,c2;
     FILE *arquivo2 = fopen("matriz2.txt", "r");
@@ -117,9 +117,9 @@ int main(int argc, char *argv[]){
     for (int i = 0; i < (l1 * c2)/P; i++){
         thread_info[i].id = i;
         thread_info[i].num_threads = P;
-        thread_info[i].rows_per_thread = rows_per_thread;
-        thread_info[i].matrix1 = matriz1;
-        thread_info[i].matrix2 = matriz2;
+        thread_info[i].li_por_thread = li_por_thread;
+        thread_info[i].matriz1 = matriz1;
+        thread_info[i].matriz2 = matriz2;
         thread_info[i].c1 = c1;
         thread_info[i].c2 = c2;
         thread_info[i].l1 = l1;

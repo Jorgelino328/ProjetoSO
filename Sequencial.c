@@ -4,15 +4,15 @@
 
 
 
-int **generate_matrix(int rows, int cols) {
-    int **matrix = (int **) malloc(rows * sizeof(int *));
-    for (int i = 0; i < rows; i++) {
-        matrix[i] = (int *) malloc(cols * sizeof(int));
-        for (int j = 0; j < cols; j++) {
-            matrix[i][j] = 0;
+int **geraMatriz(int lin, int col) {
+    int **matriz = (int **) malloc(lin * sizeof(int *));
+    for (int i = 0; i < lin; i++) {
+        matriz[i] = (int *) malloc(col * sizeof(int));
+        for (int j = 0; j < col; j++) {
+            matriz[i][j] = 0;
         }
     }
-    return matrix;
+    return matriz;
 }
 
 
@@ -41,7 +41,7 @@ int **multiplicaMatriz(int **matriz1, int **matriz2, int lin1, int col1, int lin
         printf("Erro! O número de colunas da primeira matriz\n deve ser igual ao número de linhas da segunda.\n");
         return NULL;
     }
-    int **resultado = generate_matrix(lin1,col2);
+    int **resultado = geraMatriz(lin1,col2);
     
     for (int i = 0; i < lin1; i++) {
         for (int j = 0; j < col2; j++) {
@@ -85,9 +85,7 @@ int main() {
     int **resultado = multiplicaMatriz(matriz1,matriz2,l1,c1,l2,c2);
     clock_t fim = clock();
     
-    float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC/1000000.0); //Tempo em microsegundos
-
-    printf("%f\n", tempo_execucao);
+    float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC/1000000.0); //Tempo em segundos
     
     salvar(resultado, l1, c2, tempo_execucao,"matriz3.txt");
 
