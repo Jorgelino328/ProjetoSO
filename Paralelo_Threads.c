@@ -87,7 +87,7 @@ void *multiplicaMatriz(void *arg)
     float tempo_execucao = (float)(fim - inicio)/ (CLOCKS_PER_SEC); //Tempo em segundos
 
     char buf[60];
-    snprintf(buf, 40, "Matrizes/Matrizes_das_Threads/matriz%d.txt", id); 
+    snprintf(buf, 60, "Matrizes/Matrizes_das_Threads/matriz%d.txt", id); 
     salvar(result, l1, c2, tempo_execucao, buf);
     
     pthread_exit(NULL);
@@ -123,6 +123,7 @@ int main(int argc, char *argv[]){
         thread_info[i].l1 = l1;
 
         pthread_create(&threads[i], NULL, multiplicaMatriz, (void *)&thread_info[i]);
+        exit(0);
     }
 
     for (int i = 0; i < P; i++) {
